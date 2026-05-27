@@ -67,11 +67,23 @@ function currentDay() {
   return weekDays[[6, 0, 1, 2, 3, 4, 5][day]];
 }
 
+function timeToMinutes(time: string) {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
 function isBusinessOpenNow(business: any) {
   const hour = business.hours?.find((item: any) => item.day === currentDay());
   if (!hour || hour.closed) return false;
-  const current = new Date().toTimeString().slice(0, 5);
-  return current >= hour.open && current <= hour.close;
+
+  const now = new Date();
+  const current = now.getHours() * 60 + now.getMinutes();
+  const open = timeToMinutes(hour.open);
+  const close = timeToMinutes(hour.close);
+
+  if (open === close) return true;
+  if (open < close) return current >= open && current <= close;
+  return current >= open || current <= close;
 }
 
 export const businessesService = {
@@ -86,7 +98,8 @@ export const businessesService = {
     }
 
     if (query.categoria) {
-      where.category = { slug: String(query.categoria) };
+      const categorias = Array.isArray(query.categoria) ? query.categoria : [query.categoria];
+      where.category = { slug: { in: categorias.map(String) } };
     }
 
     if (query.local) {
@@ -111,7 +124,7 @@ export const businessesService = {
     }
 
     const orderBy: Prisma.BusinessOrderByWithRelationInput =
-      query.sort === 'newest' ? { createdAt: 'desc' } : query.sort === 'rating' || query.sort === 'reviews' ? { reviews: { _count: 'desc' } } : { featured: 'desc' };
+      query.sort === 'newest' ? { createdAt: 'desc' } : query.sort === 'reviews' ? { reviews: { _count: 'desc' } } : { featured: 'desc' };
 
     const [total, businesses] = await Promise.all([
       prisma.business.count({ where }),

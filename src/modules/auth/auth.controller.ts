@@ -32,7 +32,7 @@ export const authController = {
   }),
 
   logout: asyncHandler(async (req: Request, res: Response) => {
-    await authService.logout(req.user!.id, req.cookies.refreshToken ?? req.body?.refreshToken);
+    await authService.logout(req.user?.id, req.cookies.refreshToken ?? req.body?.refreshToken);
     res.clearCookie('refreshToken');
     res.status(204).send();
   }),

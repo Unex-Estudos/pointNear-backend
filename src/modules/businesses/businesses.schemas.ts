@@ -64,10 +64,10 @@ export const listBusinessSchema = z.object({
   query: z.object({
     q: z.string().optional(),
     local: z.string().optional(),
-    categoria: z.string().optional(),
+    categoria: z.union([z.string(), z.array(z.string())]).optional(),
     openNow: z.coerce.boolean().optional(),
     minRating: z.coerce.number().optional(),
-    sort: z.enum(['relevance', 'rating', 'reviews', 'newest']).optional(),
+    sort: z.enum(['featured', 'relevance', 'rating', 'reviews', 'newest']).optional(),
     featured: z.coerce.boolean().optional(),
     page: z.coerce.number().optional(),
     limit: z.coerce.number().optional(),

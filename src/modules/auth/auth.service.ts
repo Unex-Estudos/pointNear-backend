@@ -111,20 +111,29 @@ export const authService = {
     return { user: sanitizeUser(user), ...tokens };
   },
 
-  async logout(userId: string, token?: string) {
-    if (!token) {
+  async logout(userId?: string, token?: string) {
+    if (token) {
+      try {
+        const payload = verifyRefreshToken(token);
+        const tokens = await prisma.refreshToken.findMany({
+          where: { userId: userId ?? payload.sub, revokedAt: null },
+        });
+        const matched = await Promise.all(tokens.map(async (stored) => ((await compareToken(token, stored.tokenHash)) ? stored : null))).then((items) => items.find(Boolean));
+
+        if (matched) {
+          await prisma.refreshToken.update({ where: { id: matched.id }, data: { revokedAt: new Date() } });
+          return;
+        }
+      } catch {
+        return;
+      }
+    }
+
+    if (userId) {
       await prisma.refreshToken.updateMany({
         where: { userId, revokedAt: null },
         data: { revokedAt: new Date() },
       });
-      return;
-    }
-
-    const tokens = await prisma.refreshToken.findMany({ where: { userId, revokedAt: null } });
-    const matched = await Promise.all(tokens.map(async (stored) => ((await compareToken(token, stored.tokenHash)) ? stored : null))).then((items) => items.find(Boolean));
-
-    if (matched) {
-      await prisma.refreshToken.update({ where: { id: matched.id }, data: { revokedAt: new Date() } });
     }
   },
 
