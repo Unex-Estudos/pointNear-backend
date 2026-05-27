@@ -3,13 +3,15 @@ import { env } from '../../config/env';
 import { asyncHandler } from '../../utils/async-handler';
 import { authService } from './auth.service';
 
+const refreshCookieOptions = {
+  httpOnly: true,
+  sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+  secure: env.NODE_ENV === 'production',
+  maxAge: env.JWT_REFRESH_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000,
+} as const;
+
 function setRefreshCookie(res: Response, token: string) {
-  res.cookie('refreshToken', token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: env.NODE_ENV === 'production',
-    maxAge: env.JWT_REFRESH_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000,
-  });
+  res.cookie('refreshToken', token, refreshCookieOptions);
 }
 
 export const authController = {
@@ -33,7 +35,7 @@ export const authController = {
 
   logout: asyncHandler(async (req: Request, res: Response) => {
     await authService.logout(req.user?.id, req.cookies.refreshToken ?? req.body?.refreshToken);
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', refreshCookieOptions);
     res.status(204).send();
   }),
 
