@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  MERCHANT
+  ADMIN
+}
+
+enum BusinessStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum PriceRange {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum WeekDay {
+  SEGUNDA
+  TERCA
+  QUARTA
+  QUINTA
+  SEXTA
+  SABADO
+  DOMINGO
+}
+
+enum AuditAction {
+  BUSINESS_APPROVED
+  BUSINESS_REJECTED
+  BUSINESS_SUSPENDED
+  BUSINESS_FEATURED_CHANGED
+  USER_UPDATED
+  CATEGORY_CREATED
+  CATEGORY_UPDATED
+  CATEGORY_DELETED
+  REVIEW_DELETED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(CUSTOMER)
+  avatarUrl    String?
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  businesses    Business[]      @relation("BusinessOwner")
+  reviews       Review[]
+  reviewComments ReviewComment[]
+  favorites     Favorite[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+
+  @@index([role])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  label     String
+  iconName  String
+  color     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  businesses Business[]
+}
+
+model Business {
+  id          String         @id @default(uuid())
+  slug        String         @unique
+  name        String
+  description String
+  status      BusinessStatus @default(PENDING)
+  priceRange  PriceRange     @default(MEDIUM)
+  featured    Boolean        @default(false)
+
+  categoryId String
+  ownerId    String?
+
+  street       String
+  number       String
+  neighborhood String
+  city         String
+  state        String
+  zip          String
+  lat          Decimal? @db.Decimal(10, 7)
+  lng          Decimal? @db.Decimal(10, 7)
+
+  phone     String?
+  whatsapp  String?
+  instagram String?
+  email     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category      Category              @relation(fields: [categoryId], references: [id])
+  owner         User?                 @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  photos        BusinessPhoto[]
+  subcategories BusinessSubcategory[]
+  hours         BusinessHour[]
+  services      Service[]
+  reviews       Review[]
+  favorites     Favorite[]
+
+  @@index([categoryId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([featured])
+  @@index([city, neighborhood])
+  @@index([name])
+}
+
+model BusinessPhoto {
+  id         String @id @default(uuid())
+  businessId String
+  url        String
+  alt        String?
+  position   Int    @default(0)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model BusinessSubcategory {
+  id         String @id @default(uuid())
+  businessId String
+  name       String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([name])
+}
+
+model BusinessHour {
+  id         String  @id @default(uuid())
+  businessId String
+  day        WeekDay
+  open       String
+  close      String
+  closed     Boolean @default(false)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, day])
+  @@index([day])
+}
+
+model Service {
+  id          String  @id @default(uuid())
+  businessId  String
+  name        String
+  price       Decimal @db.Decimal(10, 2)
+  description String?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  businessId String
+  userId     String?
+  authorName String
+  rating     Int
+  comment    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user     User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  comments ReviewComment[]
+
+  @@index([businessId])
+  @@index([userId])
+  @@index([rating])
+}
+
+model ReviewComment {
+  id        String   @id @default(uuid())
+  reviewId  String
+  userId    String?
+  authorName String
+  comment   String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  userId     String
+  businessId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId])
+  @@index([businessId])
+}
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  userId    String?
+  action    AuditAction
+  entity    String
+  entityId  String
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([action])
+}
