@@ -9,7 +9,25 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(16),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN_DAYS: z.coerce.number().default(7),
-  FRONTEND_ORIGIN: z.string().url().default('http://localhost:5173'),
+  FRONTEND_ORIGIN: z
+    .string()
+    .default('http://localhost:5173')
+    .refine(
+      (value) =>
+        value
+          .split(',')
+          .map((origin) => origin.trim())
+          .filter(Boolean)
+          .every((origin) => z.string().url().safeParse(origin).success),
+      'FRONTEND_ORIGIN must contain valid URLs separated by commas',
+    ),
 });
 
-export const env = envSchema.parse(process.env);
+const parsedEnv = envSchema.parse(process.env);
+
+export const env = {
+  ...parsedEnv,
+  FRONTEND_ORIGINS: parsedEnv.FRONTEND_ORIGIN.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+};
