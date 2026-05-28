@@ -15,6 +15,7 @@ import { categoriesRoutes } from './modules/categories/categories.routes';
 import { merchantRoutes } from './modules/merchant/merchant.routes';
 import { usersRoutes } from './modules/users/users.routes';
 import { asyncHandler } from './utils/async-handler';
+import { reviewsRoutes } from './modules/reviews/reviews.routes';
 
 export const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/v1/businesses', businessesRoutes);
 app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/merchant', merchantRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/reviews', reviewsRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: { message: 'Rota não encontrada.' } });
