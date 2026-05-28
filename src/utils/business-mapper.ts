@@ -69,6 +69,7 @@ export function mapBusiness(business: any) {
     reviewCount: reviews.length,
     reviews: reviews.map((review: any) => ({
       id: review.id,
+      userId: review.userId ?? null, // ← adicionado
       authorName: review.authorName,
       rating: review.rating,
       comment: review.comment,

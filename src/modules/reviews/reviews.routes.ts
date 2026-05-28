@@ -1,8 +1,14 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { validate } from '../../middlewares/validate.middleware';
+import { authenticate } from '../../middlewares/auth.middleware';
 import { reviewsController } from './reviews.controller';
-import { createReviewSchema, listReviewsSchema } from './reviews.schemas';
+import {
+  createReviewSchema,
+  listReviewsSchema,
+  updateReviewSchema,
+  deleteReviewSchema,
+} from './reviews.schemas';
 
 const reviewLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -14,4 +20,6 @@ const reviewLimiter = rateLimit({
 export const reviewsRoutes = Router({ mergeParams: true });
 
 reviewsRoutes.get('/', validate(listReviewsSchema), reviewsController.list);
-reviewsRoutes.post('/', reviewLimiter, validate(createReviewSchema), reviewsController.create);
+reviewsRoutes.post('/', reviewLimiter, authenticate, validate(createReviewSchema), reviewsController.create);
+reviewsRoutes.patch('/:reviewId', authenticate, validate(updateReviewSchema), reviewsController.update);
+reviewsRoutes.delete('/:reviewId', authenticate, validate(deleteReviewSchema), reviewsController.delete);
