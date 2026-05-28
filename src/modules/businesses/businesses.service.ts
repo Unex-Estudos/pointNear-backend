@@ -124,7 +124,11 @@ export const businessesService = {
     }
 
     const orderBy: Prisma.BusinessOrderByWithRelationInput =
-      query.sort === 'newest' ? { createdAt: 'desc' } : query.sort === 'reviews' ? { reviews: { _count: 'desc' } } : { featured: 'desc' };
+      query.sort === 'newest'
+        ? { createdAt: 'desc' }
+        : query.sort === 'reviews'
+          ? { reviews: { _count: 'desc' } }
+          : { featured: 'desc' };
 
     const [total, businesses] = await Promise.all([
       prisma.business.count({ where }),
@@ -208,7 +212,12 @@ export const businessesService = {
         instagram: data.contact.instagram ?? null,
         email: data.contact.email ?? null,
         photos: {
-          create: (data.photos?.length ? data.photos : ['https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800']).map((url, position) => ({
+          create: (data.photos?.length
+            ? data.photos
+            : [
+                'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800',
+              ]
+          ).map((url, position) => ({
             url,
             position,
           })),
@@ -244,7 +253,9 @@ export const businessesService = {
       throw new AppError('Você não pode editar este negócio.', 403);
     }
 
-    const category = data.category ? await prisma.category.findUnique({ where: { slug: data.category } }) : null;
+    const category = data.category
+      ? await prisma.category.findUnique({ where: { slug: data.category } })
+      : null;
 
     if (data.category && !category) {
       throw new AppError('Categoria inválida.', 400);
@@ -283,26 +294,42 @@ export const businessesService = {
 
       if (data.subcategories) {
         await tx.businessSubcategory.deleteMany({ where: { businessId: id } });
-        await tx.businessSubcategory.createMany({ data: data.subcategories.map((name) => ({ businessId: id, name })) });
+        await tx.businessSubcategory.createMany({
+          data: data.subcategories.map((name) => ({ businessId: id, name })),
+        });
       }
 
       if (data.photos) {
         await tx.businessPhoto.deleteMany({ where: { businessId: id } });
-        await tx.businessPhoto.createMany({ data: data.photos.map((url, position) => ({ businessId: id, url, position })) });
+        await tx.businessPhoto.createMany({
+          data: data.photos.map((url, position) => ({ businessId: id, url, position })),
+        });
       }
 
       if (data.hours) {
         await tx.businessHour.deleteMany({ where: { businessId: id } });
-        await tx.businessHour.createMany({ data: buildHourRows(data.hours).map((hour) => ({ ...hour, businessId: id })) });
+        await tx.businessHour.createMany({
+          data: buildHourRows(data.hours).map((hour) => ({ ...hour, businessId: id })),
+        });
       }
 
       if (data.services) {
         await tx.service.deleteMany({ where: { businessId: id } });
-        await tx.service.createMany({ data: data.services.map((service) => ({ businessId: id, name: service.name, price: service.price, description: service.description })) });
+        await tx.service.createMany({
+          data: data.services.map((service) => ({
+            businessId: id,
+            name: service.name,
+            price: service.price,
+            description: service.description,
+          })),
+        });
       }
     });
 
-    const updated = await prisma.business.findUniqueOrThrow({ where: { id }, include: businessInclude });
+    const updated = await prisma.business.findUniqueOrThrow({
+      where: { id },
+      include: businessInclude,
+    });
     return mapBusiness(updated);
   },
 
