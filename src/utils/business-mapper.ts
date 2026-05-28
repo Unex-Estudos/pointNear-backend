@@ -47,7 +47,9 @@ export function mapBusiness(business: any) {
     categoryLabel: business.category.label,
     subcategories: (business.subcategories ?? []).map((sub: any) => sub.name),
     description: business.description,
-    photos: (business.photos ?? []).sort((a: any, b: any) => a.position - b.position).map((p: any) => p.url),
+    photos: (business.photos ?? [])
+      .sort((a: any, b: any) => a.position - b.position)
+      .map((p: any) => p.url),
     address: {
       street: business.street,
       number: business.number,
@@ -55,8 +57,9 @@ export function mapBusiness(business: any) {
       city: business.city,
       state: business.state,
       zip: business.zip,
-      lat: business.lat == null ? 0 : Number(business.lat),
-      lng: business.lng == null ? 0 : Number(business.lng),
+      // Retorna null quando não há coordenada — nunca 0 (evita plotar no Golfo da Guiné)
+      lat: business.lat == null ? null : Number(business.lat),
+      lng: business.lng == null ? null : Number(business.lng),
     },
     contact: {
       phone: business.phone,
@@ -69,7 +72,7 @@ export function mapBusiness(business: any) {
     reviewCount: reviews.length,
     reviews: reviews.map((review: any) => ({
       id: review.id,
-      userId: review.userId ?? null, // ← adicionado
+      userId: review.userId ?? null,
       authorName: review.authorName,
       rating: review.rating,
       comment: review.comment,
