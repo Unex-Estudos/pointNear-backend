@@ -11,8 +11,21 @@ export const adminController = {
     res.json({ data: await adminService.users() });
   }),
 
+  getUserById: asyncHandler(async (req: Request, res: Response) => {
+    res.json({ data: await adminService.getUserById(req.params.id) });
+  }),
+
+  createUser: asyncHandler(async (req: Request, res: Response) => {
+    res.status(201).json({ data: await adminService.createUser(req.body) });
+  }),
+
   updateUser: asyncHandler(async (req: Request, res: Response) => {
     res.json({ data: await adminService.updateUser(req.params.id, req.body, req.user!.id) });
+  }),
+
+  deleteUser: asyncHandler(async (req: Request, res: Response) => {
+    await adminService.deleteUser(req.params.id, req.user!.id);
+    res.status(204).send();
   }),
 
   businesses: asyncHandler(async (req: Request, res: Response) => {

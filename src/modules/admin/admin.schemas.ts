@@ -15,11 +15,26 @@ export const listAdminBusinessesSchema = z.object({
   query: z.object({ status: z.nativeEnum(BusinessStatus).optional() }),
 });
 
+const adminUserPayloadSchema = z.object({
+  name: z.string().min(2).optional(),
+  role: z.nativeEnum(UserRole).optional(),
+  phone: z.string().optional().nullable(),
+  avatarUrl: z.string().url().optional().nullable(),
+});
+
+export const createUserSchema = z.object({
+  body: adminUserPayloadSchema.extend({
+    name: z.string().min(2),
+    email: z.string().email(),
+    password: z.string().min(8),
+    role: z.nativeEnum(UserRole).default(UserRole.CUSTOMER),
+  }),
+});
+
 export const updateUserSchema = z.object({
   params: z.object({ id: z.string().uuid() }),
-  body: z.object({
-    name: z.string().min(2).optional(),
-    role: z.nativeEnum(UserRole).optional(),
+  body: adminUserPayloadSchema.refine((data) => Object.keys(data).length > 0, {
+    message: 'Informe ao menos um campo para atualizar.',
   }),
 });
 

@@ -4,14 +4,17 @@ import { authenticate } from '../../middlewares/auth.middleware';
 import { requireRoles } from '../../middlewares/rbac.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 import { adminController } from './admin.controller';
-import { businessStatusSchema, categorySchema, featuredSchema, idParamSchema, listAdminBusinessesSchema, updateCategorySchema, updateUserSchema } from './admin.schemas';
+import { businessStatusSchema, categorySchema, createUserSchema, featuredSchema, idParamSchema, listAdminBusinessesSchema, updateCategorySchema, updateUserSchema } from './admin.schemas';
 
 export const adminRoutes = Router();
 
 adminRoutes.use(authenticate, requireRoles(UserRole.ADMIN));
 adminRoutes.get('/dashboard', adminController.dashboard);
 adminRoutes.get('/users', adminController.users);
+adminRoutes.post('/users', validate(createUserSchema), adminController.createUser);
+adminRoutes.get('/users/:id', validate(idParamSchema), adminController.getUserById);
 adminRoutes.patch('/users/:id', validate(updateUserSchema), adminController.updateUser);
+adminRoutes.delete('/users/:id', validate(idParamSchema), adminController.deleteUser);
 adminRoutes.get('/businesses', validate(listAdminBusinessesSchema), adminController.businesses);
 adminRoutes.patch('/businesses/:id/status', validate(businessStatusSchema), adminController.setBusinessStatus);
 adminRoutes.patch('/businesses/:id/featured', validate(featuredSchema), adminController.setFeatured);
