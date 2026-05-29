@@ -1,7 +1,27 @@
 import { AuditAction, BusinessStatus, UserRole } from '@prisma/client';
 import { prisma } from '../../config/prisma';
+import { AppError } from '../../utils/app-error';
 import { businessInclude, mapBusiness } from '../../utils/business-mapper';
+import { hashPassword } from '../../utils/password';
 import { categoriesService } from '../categories/categories.service';
+
+const userSelect = { id: true, name: true, email: true, role: true, phone: true, avatarUrl: true, createdAt: true, updatedAt: true };
+
+type CreateAdminUserInput = {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  phone?: string | null;
+  avatarUrl?: string | null;
+};
+
+type UpdateAdminUserInput = {
+  name?: string;
+  role?: UserRole;
+  phone?: string | null;
+  avatarUrl?: string | null;
+};
 
 export const adminService = {
   async dashboard() {
@@ -29,16 +49,57 @@ export const adminService = {
 
   async users() {
     return prisma.user.findMany({
-      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true },
+      select: userSelect,
       orderBy: { createdAt: 'desc' },
     });
   },
 
-  async updateUser(id: string, data: { name?: string; role?: UserRole }, actorId: string) {
+  async getUserById(id: string) {
+    const user = await prisma.user.findUnique({ where: { id }, select: userSelect });
+
+    if (!user) {
+      throw new AppError('Usuário não encontrado.', 404);
+    }
+
+    return user;
+  },
+
+  async createUser(data: CreateAdminUserInput) {
+    const email = data.email.toLowerCase();
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+
+    if (existingUser) {
+      throw new AppError('E-mail já cadastrado.', 409);
+    }
+
+    return prisma.user.create({
+      data: {
+        name: data.name,
+        email,
+        passwordHash: await hashPassword(data.password),
+        role: data.role,
+        phone: data.phone,
+        avatarUrl: data.avatarUrl,
+      },
+      select: userSelect,
+    });
+  },
+
+  async updateUser(id: string, data: UpdateAdminUserInput, actorId: string) {
+    const currentUser = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true } });
+
+    if (!currentUser) {
+      throw new AppError('Usuário não encontrado.', 404);
+    }
+
+    if (id === actorId && data.role && data.role !== UserRole.ADMIN) {
+      throw new AppError('Não é permitido remover seu próprio acesso administrativo.', 400);
+    }
+
     const user = await prisma.user.update({
       where: { id },
       data,
-      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true },
+      select: userSelect,
     });
 
     await prisma.auditLog.create({
@@ -46,6 +107,20 @@ export const adminService = {
     });
 
     return user;
+  },
+
+  async deleteUser(id: string, actorId: string) {
+    if (id === actorId) {
+      throw new AppError('Não é permitido excluir seu próprio usuário administrativo.', 400);
+    }
+
+    const user = await prisma.user.findUnique({ where: { id }, select: { id: true } });
+
+    if (!user) {
+      throw new AppError('Usuário não encontrado.', 404);
+    }
+
+    await prisma.user.delete({ where: { id } });
   },
 
   async businesses(status?: BusinessStatus) {
