@@ -23,7 +23,7 @@ app.use(
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   }),
 );
-app.use(cors({ origin: env.FRONTEND_ORIGIN, credentials: true }));
+app.use(cors({ origin: env.FRONTEND_ORIGINS, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
