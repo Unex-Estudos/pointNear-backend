@@ -18,17 +18,12 @@ import { asyncHandler } from './utils/async-handler';
 import uploadRoutes from './routes/upload.routes';
 export const app = express();
 
-<<<<<<< Updated upstream
-app.use(helmet());
-app.use(cors({ origin: env.FRONTEND_ORIGINS, credentials: true }));
-=======
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   }),
 );
-app.use(cors({ origin: env.FRONTEND_ORIGIN, credentials: true }));
->>>>>>> Stashed changes
+app.use(cors({ origin: env.FRONTEND_ORIGINS, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
