@@ -15,11 +15,20 @@ import { categoriesRoutes } from './modules/categories/categories.routes';
 import { merchantRoutes } from './modules/merchant/merchant.routes';
 import { usersRoutes } from './modules/users/users.routes';
 import { asyncHandler } from './utils/async-handler';
-
+import uploadRoutes from './routes/upload.routes';
 export const app = express();
 
+<<<<<<< Updated upstream
 app.use(helmet());
 app.use(cors({ origin: env.FRONTEND_ORIGINS, credentials: true }));
+=======
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+);
+app.use(cors({ origin: env.FRONTEND_ORIGIN, credentials: true }));
+>>>>>>> Stashed changes
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
@@ -40,7 +49,7 @@ app.use('/api/v1/businesses', businessesRoutes);
 app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/merchant', merchantRoutes);
 app.use('/api/v1/admin', adminRoutes);
-
+app.use('/api/v1/uploads', uploadRoutes);
 app.use((_req, res) => {
   res.status(404).json({ error: { message: 'Rota não encontrada.' } });
 });
